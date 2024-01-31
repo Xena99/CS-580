@@ -9,7 +9,7 @@
 
 #include "Gz.h"
 #include "disp.h"
-#include "Application1.h"
+#include "Application2.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -90,10 +90,10 @@ void CCS580HWView::OnRender()
 {
 	// TODO: Add your command handler code here
 
-	// Call renderer 
+	// Call renderer using render context
 
-	// Application 1
-	m_pApplication = new Application1;
+	// Application 2
+	m_pApplication = new Application2;
 	m_pApplication->Render();
 
 	// Set window size
@@ -154,4 +154,5 @@ void CCS580HWView::DrawFrameBuffer(CDC *pDC)
     ::BitBlt(pDC->m_hDC, 0, 0, m_pApplication->m_nWidth, m_pApplication->m_nHeight, 
         hdc, 0, 0, SRCCOPY);
     ::DeleteDC(hdc);
+    DeleteObject(m_bitmap);
 }
