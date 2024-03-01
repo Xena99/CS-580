@@ -25,7 +25,6 @@ static char THIS_FILE[] = __FILE__;
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
-void shade(GzCoord norm, GzCoord color);
 
 Application4::Application4()
 {
@@ -63,8 +62,8 @@ int Application4::Initialize()
 	* initialize the display and the renderer
 	*/
 
-	m_nWidth = 500;		// frame buffer and display width
-	m_nHeight = 600;    // frame buffer and display height
+	m_nWidth = 400;		// frame buffer and display width
+	m_nHeight = 400;    // frame buffer and display height
 
 	status |= GzNewFrameBuffer(&m_pFrameBuffer, m_nWidth, m_nHeight);
 
@@ -77,13 +76,13 @@ int Application4::Initialize()
 	status |= GzNewRender(&m_pRender, GZ_Z_BUFFER_RENDER, m_pDisplay);
 
 	/* Translation matrix */
-	GzMatrix	scale =
-	{
-		5.5,	0.0,	0.0,	8.0,
-		0.0,	5.5,	0.0,	-5,
-		0.0,	0.0,	5.5,	45,
-		0.0,	0.0,	0.0,	1
-	};
+GzMatrix	scale =
+{
+	5.5,	0.0,	0.0,	9.5,
+	0.0,	5.5,	0.0,	-2,
+	0.0,	0.0,	5.5,	45,
+	0.0,	0.0,	0.0,	1
+};
 
 	GzMatrix	rotateX =
 	{
@@ -122,20 +121,16 @@ int Application4::Initialize()
 	/* Start Renderer */
 	status |= GzBeginRender(m_pRender);
 
-	status |= GzPushMatrix(m_pRender, scale, true);
-	status |= GzPushMatrix(m_pRender, rotateY, true);
-	status |= GzPushMatrix(m_pRender, rotateX, true);
-
 	/* Light */
-	GzLight	light1 = { { -0.7071, 0.7071, 0 },{ 0.5, 0.5, 0.8 } };
-	GzLight	light2 = { { 0, -0.7071, -0.7071 },{ 0.8, 0.3, 0.3 } };
-	GzLight	light3 = { {0.7071, 0.0, -0.7071 },{ 0.2, 0.8, 0.3 } };
-	GzLight	ambientlight = { { 0, 0, 0 },{ 0.3, 0.3, 0.3 } };
+	GzLight	light1 = { { -0.7071, 0.7071, 0 },{ 0.5, 0.4, 0.6 } };
+	GzLight	light2 = { { 0, -0.7071, -0.7071 },{ 0.4, 0.4, 0.3 } };
+	GzLight	light3 = { { 0.7071, 0.0, -0.7071 },{ 0.4, 0.35, 0.5 } };
+	GzLight	ambientlight = { { 0, 0, 0 },{ 0.7, 0.7, 0.7 } };
 
 	/* Material property */
-	GzColor specularCoefficient = { 0.3, 0.3, 0.3 };
-	GzColor ambientCoefficient = { 0.2, 0.2, 0.2 };
-	GzColor diffuseCoefficient = { 0.7, 0.7, 0.7 };
+	GzColor specularCoefficient = { 0.4, 0.4, 0.4 };
+	GzColor ambientCoefficient = { 0.3, 0.3, 0.3 };
+	GzColor diffuseCoefficient = { 0.9, 0.9, 0.9 };
 
 	/*
 	renderer is ready for frame --- define lights and shader at start of frame
@@ -166,7 +161,7 @@ int Application4::Initialize()
 	* Select either GZ_COLOR or GZ_NORMALS as interpolation mode
 	*/
 	nameListShader[1] = GZ_INTERPOLATE;
-	//	interpStyle = GZ_FLAT;
+	//interpStyle = GZ_FLAT;			 /*For Flat shading*/
 #if 0
 	interpStyle = GZ_COLOR;         /* Gouraud shading */
 #else 
@@ -184,7 +179,9 @@ int Application4::Initialize()
 
 	status |= GzPutAttribute(m_pRender, 5, nameListShader, valueListShader);
 
-
+	status |= GzPushMatrix(m_pRender, scale);
+	status |= GzPushMatrix(m_pRender, rotateY);
+	status |= GzPushMatrix(m_pRender, rotateX);
 
 	if (status) exit(GZ_FAILURE);
 
@@ -297,4 +294,3 @@ int Application4::Clean()
 	else
 		return(GZ_SUCCESS);
 }
-
