@@ -11,12 +11,77 @@
 
 #define Pi 3.1415926
 
-template <typename T>
-T clamp(T value, T min, T max) {
-	return (value < min) ? min : (value > max) ? max : value;
+
+float Determinant3x3(GzMatrix matrix) {
+	return matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+		matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+		matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
 }
 
-void ComputeInverseTranspose(const GzMatrix matrix, GzMatrix inverseTranspose);
+
+float Determinant(GzMatrix matrix) {
+	float det = 0;
+	for (int i = 0; i < 4; i++) {
+		GzMatrix submatrix;
+		for (int j = 1; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				if (k < i) {
+					submatrix[j - 1][k] = matrix[j][k];
+				}
+				else if (k > i) {
+					submatrix[j - 1][k - 1] = matrix[j][k];
+				}
+			}
+		}
+		det += (i % 2 == 0 ? 1 : -1) * matrix[0][i] * Determinant3x3(submatrix);
+	}
+	return det;
+}
+
+void Adjoint(GzMatrix matrix, GzMatrix adjoint) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			GzMatrix submatrix;
+			for (int k = 0; k < 4; k++) {
+				for (int l = 0; l < 4; l++) {
+					if (k != i && l != j) {
+						submatrix[k < i ? k : k - 1][l < j ? l : l - 1] = matrix[k][l];
+					}
+				}
+			}
+			adjoint[j][i] = ((i + j) % 2 == 0 ? 1 : -1) * Determinant3x3(submatrix);
+		}
+	}
+}
+
+int InverseAndTranspose(GzMatrix matrix, GzMatrix &result) {
+	// Compute the determinant of the matrix
+	float det = Determinant(matrix);
+	if (det == 0) {
+		return GZ_FAILURE; // Matrix is not invertible
+	}
+
+	// Compute the adjoint of the matrix
+	GzMatrix adjoint;
+	Adjoint(matrix, adjoint);
+
+	// Compute the inverse by dividing the adjoint by the determinant
+	GzMatrix inverse;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			inverse[i][j] = adjoint[i][j] / det;
+		}
+	}
+
+	// Transpose the inverse to get the result
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			result[i][j] = inverse[j][i];
+		}
+	}
+
+	return GZ_SUCCESS;
+}
 
 int GzRotXMat(float degree, GzMatrix mat) {
 	if (mat == nullptr) return GZ_FAILURE;
@@ -134,11 +199,10 @@ int GzPutCamera(GzRender *render, GzCamera *camera) {
 	d = tan(((render->camera.FOV) / 2) * (3.14159265 / 180));
 	render->Xsp[2][2] = INT_MAX * d;
 
-	// Return success
 	return GZ_SUCCESS;
 }
 
-int GzPushMatrix(GzRender *render, GzMatrix matrix, bool isNormalTransform = false) {
+int GzPushMatrix(GzRender *render, GzMatrix matrix) {
 	if (render == nullptr) {
 		return GZ_FAILURE;
 	}
@@ -146,7 +210,7 @@ int GzPushMatrix(GzRender *render, GzMatrix matrix, bool isNormalTransform = fal
 	if (render->matlevel >= (MATLEVELS - 1)) {
 		return GZ_FAILURE;
 	}
-
+	
 	render->matlevel++;
 	if (render->matlevel == 0) {
 		for (int i = 0; i < 4; i++) {
@@ -171,66 +235,12 @@ int GzPushMatrix(GzRender *render, GzMatrix matrix, bool isNormalTransform = fal
 			}
 		}
 	}
-
-	if (isNormalTransform) {
-		GzMatrix normalMatrix;
-		if (matrix[0][1] == 0 && matrix[0][2] == 0 && matrix[1][0] == 0 &&
-			matrix[1][2] == 0 && matrix[2][0] == 0 && matrix[2][1] == 0) {
-			// Rotation matrix or uniform scaling matrix
-			for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 3; j++) {
-					normalMatrix[i][j] = matrix[i][j];
-				}
-				normalMatrix[i][3] = 0.0f; // No translation for normals
-			}
-		}
-		else {
-			// Non-uniform scaling matrix
-			ComputeInverseTranspose(matrix, normalMatrix);
-		}
-		normalMatrix[3][0] = normalMatrix[3][1] = normalMatrix[3][2] = 0.0f;
-		normalMatrix[3][3] = 1.0f;
-		GzPushNormalMatrix(render, normalMatrix);
-	}
-
-	return GZ_SUCCESS;
-}
-
-int GzPushNormalMatrix(GzRender *render, GzMatrix matrix) {
-	if (render == nullptr || render->matlevel >= MATLEVELS - 1) {
+	render->normal_level++;
+	if (InverseAndTranspose(render->Ximage[render->matlevel], render->Xnorm[render->normal_level]) != GZ_SUCCESS) {
 		return GZ_FAILURE;
 	}
-
-	if (render->matlevel == 0) {
-		// If this is the first matrix on the stack, simply copy it
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				render->Xnorm[render->matlevel][i][j] = matrix[i][j];
-			}
-		}
-	}
-	else {
-		// If there are already matrices on the stack, accumulate the new matrix with the top matrix
-		GzMatrix tempMatrix;
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				tempMatrix[i][j] = 0;
-				for (int k = 0; k < 4; k++) {
-					tempMatrix[i][j] += render->Xnorm[render->matlevel - 1][i][k] * matrix[k][j];
-				}
-			}
-		}
-		// Copy the accumulated matrix to the top of the stack
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				render->Xnorm[render->matlevel][i][j] = tempMatrix[i][j];
-			}
-		}
-	}
-
 	return GZ_SUCCESS;
 }
-
 
 int GzPopMatrix(GzRender *render) {
 	if (render == nullptr) {
@@ -351,6 +361,7 @@ int GzNewRender(GzRender **render, GzRenderClass renderClass, GzDisplay *display
 	newRender->open = 0;
 	// The matrix level is initialized to -1 (no matrices on the stack)
 	newRender->matlevel = -1;
+	newRender->normal_level = -1;
 	// Assign the display passed to the function
 	newRender->display = display;
 
@@ -422,111 +433,78 @@ int GzBeginRender(GzRender *render) {
 
 	// Initialize Ximage stack
 	render->matlevel = -1; // Initialize stack pointer
-	GzMatrix identity =
-	{
-		1.0,    0.0,    0.0,    0.0,
-		0.0,    1.0,    0.0,    0.0,
-		0.0,    0.0,    1.0,    0.0,
-		0.0,    0.0,    0.0,    1.0
-	};
-	// Setup Xsp - Screen space transformation
+	render->normal_level = -1;
+
 	GzPushMatrix(render, render->Xsp);
-	GzPushNormalMatrix(render, identity);
-	// No normal matrix needed for Xsp
 
-	// Setup Xpi - Perspective transformation
 	GzPushMatrix(render, Xpi);
-	GzPushNormalMatrix(render, identity);
 
-	// No normal matrix needed for Xpi
-
-	// Setup Xiw - Camera transformation (modelview matrix)
 	GzPushMatrix(render, Xiw);
-	GzMatrix inverseTranspose;
-	ComputeInverseTranspose(Xiw, inverseTranspose);
-	GzPushNormalMatrix(render, inverseTranspose);
-
-	
-
 	render->open = 1;
 
 	return GZ_SUCCESS;
 }
 
-int GzPutAttribute(GzRender	*render, int numAttributes, GzToken	*nameList, GzPointer *valueList) /* void** valuelist */
+int GzPutAttribute(GzRender *render, int numAttributes, GzToken	*nameList, GzPointer *valueList)
 {
-	/*
-	- set renderer attribute states (e.g.: GZ_RGB_COLOR default color)
-	- later set shaders, interpolaters, texture maps, and lights
+	/* HW 2.1
+	-- Set renderer attribute states (e.g.: GZ_RGB_COLOR default color)
+	-- In later homeworks set shaders, interpolaters, texture maps, and lights
 	*/
-	if (render == NULL) {
-		return GZ_FAILURE;
-	}
-	render->open = 1;
-	for (int i = 0; i < numAttributes; i++) {
-		if (nameList[i] == GZ_RGB_COLOR) {
-			GzColor* c = (GzColor*)valueList[i];
-			render->flatcolor[0] = max(min(c[i][RED], 4095), 0);
-			render->flatcolor[1] = max(min(c[i][GREEN], 4095), 0);
-			render->flatcolor[2] = max(min(c[i][BLUE], 4095), 0);
+	for (int position = 0; position < numAttributes; position++) {
+		GzToken currentToken = nameList[position];
+		if (currentToken == GZ_RGB_COLOR) {
+			float* color = (float*)valueList[position];
+			render->flatcolor[0] = color[0];
+			render->flatcolor[1] = color[1];
+			render->flatcolor[2] = color[2];
 		}
-		if (nameList[i] == GZ_DIRECTIONAL_LIGHT)
-		{
-			GzLight* lightDir = (GzLight*)valueList[i];
-			if (render->numlights < 0)
-				render->numlights = 0;
-			render->lights[render->numlights].direction[0] = lightDir->direction[0];
-			render->lights[render->numlights].direction[1] = lightDir->direction[1];
-			render->lights[render->numlights].direction[2] = lightDir->direction[2];
-			render->lights[render->numlights].color[0] = lightDir->color[0];
-			render->lights[render->numlights].color[1] = lightDir->color[1];
-			render->lights[render->numlights].color[2] = lightDir->color[2];
+		else if (currentToken == GZ_SPECULAR_COEFFICIENT) {
+			float* specular = (float*)valueList[position];
+			render->Ks[0] = specular[0];
+			render->Ks[1] = specular[1];
+			render->Ks[2] = specular[2];
+		}
+		else if (currentToken == GZ_DIFFUSE_COEFFICIENT) {
+			float* diffuse = (float*)valueList[position];
+			render->Kd[0] = diffuse[0];
+			render->Kd[1] = diffuse[1];
+			render->Kd[2] = diffuse[2];
+		}
+		else if (currentToken == GZ_AMBIENT_COEFFICIENT) {
+			float* ambient = (float*)valueList[position];
+			render->Ka[0] = ambient[0];
+			render->Ka[1] = ambient[1];
+			render->Ka[2] = ambient[2];
+		}
+		else if (currentToken == GZ_DISTRIBUTION_COEFFICIENT) {
+			render->spec = *(float*)valueList[position];
+		}
+		else if (currentToken == GZ_DIRECTIONAL_LIGHT) {
+			GzLight* dirLight = (GzLight*)valueList[position];
+			for (int i = 0; i < 3; i++) {
+				render->lights[position].direction[i] = dirLight->direction[i];
+				render->lights[position].color[i] = dirLight->color[i];
+			}
 			render->numlights++;
+
 		}
-		if (nameList[i] == GZ_AMBIENT_LIGHT)
-		{
-			GzLight* lightAmb = (GzLight*)valueList[i];
-			render->ambientlight.direction[0] = lightAmb->direction[0];
-			render->ambientlight.direction[1] = lightAmb->direction[1];
-			render->ambientlight.direction[2] = lightAmb->direction[2];
-			render->ambientlight.color[0] = lightAmb->color[0];
-			render->ambientlight.color[1] = lightAmb->color[1];
-			render->ambientlight.color[2] = lightAmb->color[2];
+		else if (currentToken == GZ_AMBIENT_LIGHT) {
+			GzLight* ambLight = (GzLight*)valueList[position];
+			for (int i = 0; i < 3; i++) {
+				render->ambientlight.direction[i] = ambLight->direction[i];
+				render->ambientlight.color[i] = ambLight->color[i];
+			}
+
 		}
-		if (nameList[i] == GZ_AMBIENT_COEFFICIENT)
-		{
-			GzColor* colorAmb = (GzColor*)valueList[i];
-			render->Ka[0] = (*colorAmb)[0];
-			render->Ka[1] = (*colorAmb)[1];
-			render->Ka[2] = (*colorAmb)[2];
+		else if (currentToken == GZ_INTERPOLATE) {
+			render->interp_mode = *(int*)valueList[position];
 		}
-		if (nameList[i] == GZ_DIFFUSE_COEFFICIENT)
-		{
-			GzColor* colorDiff = (GzColor*)valueList[0];
-			render->Kd[0] = (*colorDiff)[0];
-			render->Kd[1] = (*colorDiff)[1];
-			render->Kd[2] = (*colorDiff)[2];
-		}
-		if (nameList[i] == GZ_SPECULAR_COEFFICIENT)
-		{
-			GzColor* colorSpec = (GzColor*)valueList[i];
-			render->Ks[0] = (*colorSpec)[0];
-			render->Ks[1] = (*colorSpec)[1];
-			render->Ks[2] = (*colorSpec)[2];
-		}
-		if(nameList[i] == GZ_INTERPOLATE) 
-		{
-			int* mode = (int*)valueList[i];
-			render->interp_mode = *mode;
-		}
-		if (nameList[i] == GZ_DISTRIBUTION_COEFFICIENT) {
-			render->spec = *(float*)valueList[i];
-		}
+
 	}
 
 	return GZ_SUCCESS;
 }
-
 short ctoi(float color)		/* convert float color to GzIntensity short */
 {
 	return(short)((int)(color * ((1 << 12) - 1)));
@@ -566,93 +544,73 @@ void sortVertices(GzCoord* verticesList) {
 		}
 	}
 }
-
-int GzShadingEquation(GzRender *render, GzColor color, GzCoord& norm) {
-	Normalize(norm);
-	
-	GzCoord E = {
-		0,0,-1
-	};
+int GzShadingEquation(GzRender *render, GzColor color, GzCoord norm) {
+	GzCoord E = { 0, 0, -1 };
 	Normalize(E);
+	GzCoord normal = { norm[X], norm[Y], norm[Z] };
+	float NdotE = DotProduct(normal, E);
+	if (NdotE < 0) {
+		// Flip normal for double-sided surfaces
+		normal[X] = -normal[X];
+		normal[Y] = -normal[Y];
+		normal[Z] = -normal[Z];
+		NdotE = -NdotE;
+	}
 
-	float NdotE = DotProduct(norm, E);
-	GzColor specSum = { 0, 0, 0 }, diffSum = { 0, 0, 0 };
+	GzColor specularSum = { 0, 0, 0 };
+	GzColor diffuseSum = { 0, 0, 0 };
 
-	for (int i = 0; i < render->numlights; ++i) {
-		float NdotL = DotProduct(norm, render->lights[i].direction);
-		bool validLight = (NdotL >= 0 && NdotE >= 0) || (NdotL < 0 && NdotE < 0);
+	for (int i = 0; i < 3; ++i) {
+		GzCoord light;
+		light[X] = render->lights[i].direction[X];
+		light[Y] = render->lights[i].direction[Y];
+		light[Z] = render->lights[i].direction[Z];
+		Normalize(light);
 
-		if (validLight) {
-			if (NdotL < 0) NdotL = (-1) * NdotL;
+		float NdotL = DotProduct(normal, light);
+		if (NdotL < 0) {
+			// Skip light if it's on the wrong side
+			continue;
+		}
 
-			GzCoord R = {
-				2 * NdotL * norm[X] - render->lights[i].direction[X],
-				2 * NdotL * norm[Y] - render->lights[i].direction[Y],
-				2 * NdotL * norm[Z] - render->lights[i].direction[Z]
-			};
-			Normalize(R);
+		// Reflect vector R
+		GzCoord R = {
+			2 * NdotL * norm[X] - light[X],
+			2 * NdotL * norm[Y] - light[Y],
+			2 * NdotL * norm[Z] - light[Z]
+		};
+		Normalize(R);
 
-			float RdotE = DotProduct(R, E);
-			if (RdotE < 0) RdotE = 0;
-			if (RdotE > 1) RdotE = 1;
-			for (int j = 0; j < 3; ++j) {
-				specSum[j] += render->lights[i].color[j] * pow(RdotE, render->spec);
-				diffSum[j] += render->lights[i].color[j] * NdotL;
-			}
+		float RdotE = max(0, DotProduct(R, E));
+
+		// Specular component
+		for (int j = 0; j < 3; ++j) {
+			specularSum[j] += render->lights[i].color[j] * pow(RdotE, render->spec);
+		}
+
+		// Diffuse component
+		for (int j = 0; j < 3; ++j) {
+			diffuseSum[j] += render->lights[i].color[j] * NdotL;
 		}
 	}
 
+	// Add in the ambient component
+	GzColor ambientContribution = {
+		render->ambientlight.color[0] * render->Ka[0],
+		render->ambientlight.color[1] * render->Ka[1],
+		render->ambientlight.color[2] * render->Ka[2]
+	};
+
+	// Combine the components and apply the material's coefficients
 	for (int i = 0; i < 3; ++i) {
-		color[i] = render->Ka[i] * render->ambientlight.color[i] +
-			render->Kd[i] * diffSum[i] +
-			render->Ks[i] * specSum[i];
+		color[i] = ambientContribution[i] +
+			diffuseSum[i] * render->Kd[i] +
+			specularSum[i] * render->Ks[i];
+		color[i] = max(0, min(color[i], 1)); // Clamp color to [0, 1]
 	}
 
 	return GZ_SUCCESS;
 }
-
-void ComputeInverseTranspose(const GzMatrix matrix, GzMatrix inverseTranspose) {
-	// Initialize the last row and column of inverseTranspose matrix to identity
-	for (int i = 0; i < 4; ++i) {
-		inverseTranspose[i][3] = inverseTranspose[3][i] = 0.0f;
-	}
-	inverseTranspose[3][3] = 1.0f;
-
-	// Compute the determinant of the 3x3 submatrix
-	float det = matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
-		matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
-		matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]);
-
-	// Check for non-invertible matrix
-	if (fabs(det) < 1e-6) {
-		// Matrix is not invertible, return identity matrix
-		return;
-	}
-
-	// Compute the inverse of the 3x3 submatrix
-	GzMatrix inverse;
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			// Compute the cofactor of matrix[j][i]
-			int i1 = (i + 1) % 3;
-			int i2 = (i + 2) % 3;
-			int j1 = (j + 1) % 3;
-			int j2 = (j + 2) % 3;
-			float cofactor = matrix[i1][j1] * matrix[i2][j2] - matrix[i1][j2] * matrix[i2][j1];
-
-			// Apply the sign and divide by the determinant
-			inverse[j][i] = cofactor / det;
-		}
-	}
-
-	// Transpose the inverse of the 3x3 submatrix to get the inverse transpose
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			inverseTranspose[i][j] = inverse[j][i];
-		}
-	}
-}
-
 
 int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *valueList) {
 	// Error checking
@@ -666,33 +624,51 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 		return GZ_FAILURE;
 	}
 
-	// Transform the vertices and normals
 	GzCoord transformedVertices[3];
+	for (int i = 0; i < 3; i++) {
+		// Homogeneous coordinates
+		GzCoord& vertex = vertices[i];
+		float w = render->Ximage[render->matlevel][3][0] * vertex[X] +
+			render->Ximage[render->matlevel][3][1] * vertex[Y] +
+			render->Ximage[render->matlevel][3][2] * vertex[Z] +
+			render->Ximage[render->matlevel][3][3];
+
+		for (int j = 0; j < 3; j++) {
+			transformedVertices[i][j] = (render->Ximage[render->matlevel][j][0] * vertex[X] +
+				render->Ximage[render->matlevel][j][1] * vertex[Y] +
+				render->Ximage[render->matlevel][j][2] * vertex[Z] +
+				render->Ximage[render->matlevel][j][3]) / w;
+		}
+	}
+
 	GzCoord transformedNormals[3];
 	for (int i = 0; i < 3; i++) {
-		// Transform vertices
-		GzMatrix& Ximage = render->Ximage[render->matlevel];
-		float w = Ximage[3][0] * vertices[i][X] + Ximage[3][1] * vertices[i][Y] + Ximage[3][2] * vertices[i][Z] + Ximage[3][3];
-		for (int j = 0; j < 3; j++) {
-			transformedVertices[i][j] = (Ximage[j][0] * vertices[i][X] + Ximage[j][1] * vertices[i][Y] + Ximage[j][2] * vertices[i][Z] + Ximage[j][3]) / w;
+		// Define the normal vector in homogeneous coordinates
+		float normal[4] = { normals[i][0], normals[i][1], normals[i][2], 0 };
+
+		// Transform the normal vector using the combined normal transformation matrix
+		float transformedNormal[4] = { 0 };
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 4; k++) {
+				transformedNormal[j] += render->Xnorm[render->normal_level][j][k] * normal[k];
+			}
 		}
 
-		// Transform normals
-		GzMatrix& Xnorm = render->Xnorm[render->matlevel];
-		for (int j = 0; j < 3; j++) {
-			transformedNormals[i][j] = Xnorm[j][0] * normals[i][X] + Xnorm[j][1] * normals[i][Y] + Xnorm[j][2] * normals[i][Z];
-		}
-		Normalize(transformedNormals[i]);
+		// Normalize the transformed normal vector
+		float magnitude = sqrt(transformedNormal[0] * transformedNormal[0] + transformedNormal[1] * transformedNormal[1] + transformedNormal[2] * transformedNormal[2]);
+		transformedNormals[i][0] = transformedNormal[0] / magnitude;
+		transformedNormals[i][1] = transformedNormal[1] / magnitude;
+		transformedNormals[i][2] = transformedNormal[2] / magnitude;
 	}
-	
-	// Sort vertices by Y-coordinate
-	sortVertices(transformedVertices);
 
-	// Get Bounding box
-	int minx = floor(min(min(transformedVertices[0][0], transformedVertices[1][0]), transformedVertices[2][0]));
-	int maxx = ceil(max(max(transformedVertices[0][0], transformedVertices[1][0]), transformedVertices[2][0]));
-	int miny = floor(min(min(transformedVertices[0][1], transformedVertices[1][1]), transformedVertices[2][1]));
-	int maxy = ceil(max(max(transformedVertices[0][1], transformedVertices[1][1]), transformedVertices[2][1]));
+	// Sort vertices by Y-coordinate
+	//sortVertices(transformedVertices);
+
+	//Get Bounding box
+	int minx = (int)(min(min(transformedVertices[0][0], transformedVertices[1][0]), transformedVertices[2][0]) + 0.5);
+	int maxx = (int)(max(max(transformedVertices[0][0], transformedVertices[1][0]), transformedVertices[2][0]) + 0.5);
+	int miny = (int)(min(min(transformedVertices[0][1], transformedVertices[1][1]), transformedVertices[2][1]) + 0.5);
+	int maxy = (int)(max(max(transformedVertices[0][1], transformedVertices[1][1]), transformedVertices[2][1]) + 0.5);
 
 	// Rasterize the triangle
 	for (int y = miny; y <= maxy; y++) {
@@ -715,7 +691,7 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 				GzIntensity r, g, b, a;
 				GzDepth z;
 				GzGetDisplay(render->display, x, y, &r, &g, &b, &a, &z);
-				if (zInterpolated < z || zInterpolated == INT_MAX) {
+				if (zInterpolated < z ) {
 					GzColor color;
 					if (render->interp_mode == GZ_NORMALS) {
 						GzCoord interpolatedNormal = {
@@ -724,7 +700,6 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 							alpha * transformedNormals[0][Z] + beta * transformedNormals[1][Z] + gamma * transformedNormals[2][Z]
 						};
 						Normalize(interpolatedNormal);
-
 						GzShadingEquation(render, color, interpolatedNormal);
 					}
 					else if (render->interp_mode == GZ_COLOR) {
@@ -737,8 +712,8 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 						color[1] = alpha * Color0[1] + beta * Color1[1] + gamma * Color2[1]; // Green
 						color[2] = alpha * Color0[2] + beta * Color1[2] + gamma * Color2[2]; // Blue
 					}
-					// Update the pixel value in the display
-					GzPutDisplay(render->display, x, y, ctoi(color[RED]), ctoi(color[GREEN]), ctoi(color[BLUE]), 1, zInterpolated);
+					
+					GzPutDisplay(render->display, x, y, (GzIntensity)ctoi(color[RED]), (GzIntensity)ctoi(color[GREEN]), (GzIntensity)ctoi(color[BLUE]), 1, zInterpolated);
 				}
 			}
 		}
@@ -746,5 +721,4 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 
 	return GZ_SUCCESS;
 }
-
 
