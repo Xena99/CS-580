@@ -79,10 +79,10 @@ int GzInitDisplay(GzDisplay	*display)
 		for (int i = 0; i < display->xres; i++) {
 			for (int j = 0; j < display->yres; j++) {
 
-				display->fbuf[ARRAY(i, j)].red = 3750;
-				display->fbuf[ARRAY(i, j)].green = 3750;
-				display->fbuf[ARRAY(i, j)].blue = 3750;
-				display->fbuf[ARRAY(i, j)].alpha = 3750;
+				display->fbuf[ARRAY(i, j)].red = 1000;
+				display->fbuf[ARRAY(i, j)].green = 1500;
+				display->fbuf[ARRAY(i, j)].blue = 1500;
+				display->fbuf[ARRAY(i, j)].alpha = 1;
 				display->fbuf[ARRAY(i, j)].z = INT_MAX;
 			}
 		}
