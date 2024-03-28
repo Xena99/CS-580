@@ -10,6 +10,7 @@
 #endif // _MSC_VER > 1000
 
 #include "Application.h"
+#include "Gz.h"
 
 class CCS580HWView : public CView
 {
@@ -32,7 +33,7 @@ public:
 	public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	protected:
+	virtual void OnInitialUpdate();
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -49,6 +50,9 @@ protected:
 protected:
 	//{{AFX_MSG(CCS580HWView)
 	afx_msg void OnRender();
+	afx_msg void OnRotate();
+	afx_msg void OnTranslate();
+	afx_msg void OnScale();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
