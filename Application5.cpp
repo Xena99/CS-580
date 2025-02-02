@@ -158,16 +158,26 @@ int Application5::Initialize()
 		status |= GzBeginRender(m_pRender[i]);
 
 		/* Light */
-		GzLight	light1 = { { -0.7071, 0.7071, 0 },{ 0.6, 0.6, 0.6 } }; // Increase light1 intensity
-		GzLight	light2 = { { 0, -0.7071, -0.7071 },{ 0.8, 0.8, 0.6 } }; // Increase light2 intensity
-		GzLight	light3 = { { 0.7071, 0.0, -0.7071 },{ 0.8, 0.4, 0.6 } }; // Increase light3 intensity
-		GzLight	ambientlight = { { 0, 0, 0 },{ 0.5, 0.5, 0.5 } }; // Increase ambient light intensity
+		//GzLight	light1 = { { -0.7071, 0.7071, 0 },{ 0.6, 0.6, 0.6 } }; // Increase light1 intensity
+		//GzLight	light2 = { { 0, -0.7071, -0.7071 },{ 0.8, 0.8, 0.6 } }; // Increase light2 intensity
+		//GzLight	light3 = { { 0.7071, 0.0, -0.7071 },{ 0.8, 0.4, 0.6 } }; // Increase light3 intensity
+		//GzLight	ambientlight = { { 0, 0, 0 },{ 0.5, 0.5, 0.5 } }; // Increase ambient light intensity
 
-																  /* Material property */
-		GzColor specularCoefficient = { 0.8, 0.8, 0.8 }; // Increase specular reflection
-		GzColor ambientCoefficient = { 0.6, 0.6, 0.6 }; // Increase ambient reflection
-		GzColor diffuseCoefficient = { 1.2, 1.2, 1.2 }; // Increase diffuse reflection
+		//														  /* Material property */
+		//GzColor specularCoefficient = { 0.8, 0.8, 0.8 }; // Increase specular reflection
+		//GzColor ambientCoefficient = { 0.6, 0.6, 0.6 }; // Increase ambient reflection
+		//GzColor diffuseCoefficient = { 1.2, 1.2, 1.2 }; // Increase diffuse reflection
 
+		/* Light */
+		GzLight	light1 = { { -0.7071, 0.7071, 0 },{ 0.5, 0.4, 0.6 } };
+		GzLight	light2 = { { 0, -0.7071, -0.7071 },{ 0.4, 0.4, 0.3 } };
+		GzLight	light3 = { { 0.7071, 0.0, -0.7071 },{ 0.4, 0.35, 0.5 } };
+		GzLight	ambientlight = { { 0, 0, 0 },{ 0.7, 0.7, 0.7 } };
+
+		/* Material property */
+		GzColor specularCoefficient = { 0.4, 0.4, 0.4 };
+		GzColor ambientCoefficient = { 0.3, 0.3, 0.3 };
+		GzColor diffuseCoefficient = { 0.9, 0.9, 0.9 };
 	
 		nameListLights[0] = GZ_DIRECTIONAL_LIGHT;
 		valueListLights[0] = (GzPointer)&light1;

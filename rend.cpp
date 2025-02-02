@@ -555,21 +555,21 @@ int GzPutAttribute(GzRender *render, int numAttributes, GzToken *nameList, GzPoi
 			render->interp_mode = *interpolate_mode;
 		}
 
-		else if (nameList[i] == GZ_TEXTURE_MAP) {
+		/*else if (nameList[i] == GZ_TEXTURE_MAP) {
 			GzTexture texture = (GzTexture)valueList[i];
-			render->tex_fun = texture;
-		}
+			render->tex_fun = texture;*/
+		//}
 
 		//hw6
 
-		else if (nameList[i] == GZ_AASHIFTX) {
+		/*else if (nameList[i] == GZ_AASHIFTX) {
 			float *dx = (float*)valueList[i];
 			render->dx = *dx;
 		}
 		else if (nameList[i] == GZ_AASHIFTY) {
 			float *dy = (float*)valueList[i];
-			render->dy = *dy;
-		}
+			render->dy = *dy;*/
+		//}
 
 	} 
 
@@ -788,10 +788,10 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 					float correctedV = interpolatedVW / interpolatedW; // Divide by interpolatedW to apply perspective correction
 
 					// Look up texture color at this pixel
-					GzColor texColor = { 0.0f, 0.0f, 0.0f }; // Default color if no texture function is provided
-					if (render->tex_fun != NULL) {
-						render->tex_fun(correctedU, correctedV, texColor);
-					}
+					//GzColor texColor = { 0.0f, 0.0f, 0.0f }; // Default color if no texture function is provided
+					//if (render->tex_fun != NULL) {
+					//	render->tex_fun(correctedU, correctedV, texColor);
+					//}
 					if (render->interp_mode == GZ_NORMALS) {
 						GzCoord interpolatedNormal = {
 							alpha * transformedNormals[0][X] + beta * transformedNormals[1][X] + gamma * transformedNormals[2][X],
@@ -812,9 +812,9 @@ int GzPutTriangle(GzRender *render, int numParts, GzToken *nameList, GzPointer *
 						color[2] = alpha * Color0[2] + beta * Color1[2] + gamma * Color2[2]; // Blue
 					}
 
-					color[RED] *= texColor[RED];
+					/*color[RED] *= texColor[RED];
 					color[GREEN] *= texColor[GREEN];
-					color[BLUE] *= texColor[BLUE];
+					color[BLUE] *= texColor[BLUE];*/
 
 					GzPutDisplay(render->display, x, y, (GzIntensity)ctoi(color[RED]), (GzIntensity)ctoi(color[GREEN]), (GzIntensity)ctoi(color[BLUE]), 1, zInterpolated);
 				}

@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|C:\\Users\\rituj\\Source\\Repos\\CS-580\\Application5.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|solutionrelative:Application5.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|C:\\Users\\rituj\\Source\\Repos\\CS-580\\rend.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|solutionrelative:rend.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|C:\\Users\\rituj\\Source\\Repos\\CS-580\\tex_fun.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{D6204DC5-3CE9-47E5-8250-BA896ADB33CE}|CS580HW5.vcxproj|solutionrelative:tex_fun.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "rend.cpp",
+              "DocumentMoniker": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\rend.cpp",
+              "RelativeDocumentMoniker": "rend.cpp",
+              "ToolTip": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\rend.cpp",
+              "RelativeToolTip": "rend.cpp",
+              "ViewState": "AgIAAB0DAAAAAAAAAAASwDADAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-02T04:42:24.484Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "tex_fun.cpp",
+              "DocumentMoniker": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\tex_fun.cpp",
+              "RelativeDocumentMoniker": "tex_fun.cpp",
+              "ToolTip": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\tex_fun.cpp",
+              "RelativeToolTip": "tex_fun.cpp",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-02T04:41:25.142Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Application5.cpp",
+              "DocumentMoniker": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\Application5.cpp",
+              "RelativeDocumentMoniker": "Application5.cpp",
+              "ToolTip": "C:\\Users\\rituj\\Source\\Repos\\CS-580\\Application5.cpp",
+              "RelativeToolTip": "Application5.cpp",
+              "ViewState": "AgIAAJkAAAAAAAAAAAAkwLMAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-02-02T04:40:16.712Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
