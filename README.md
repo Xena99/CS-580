@@ -1,5 +1,12 @@
 # CS580 Homework - Rendering Utah Teapot Implementation
 
+<table>
+  <tr>
+    <td><img src="./images/Phong%20Shading.png" alt="Phong Shading" width="350"/></td>
+    <td><img src="./images/Texture%20Mapping.png" alt="Texture Mapping" width="350"/></td>
+  </tr>
+</table>
+
 ## Overview
 This project is part of CS580, where a simple 3D rendering pipeline is implemented to render triangles using various transformations, Phong shading, texture mapping, and depth buffering (Z-buffer). The main features of this project include:
 
